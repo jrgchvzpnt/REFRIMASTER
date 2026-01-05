@@ -297,13 +297,20 @@ export default function App() {
           className="absolute inset-0 w-full h-full object-cover brightness-[0.3]" 
           alt="" 
         />
-        <div className="relative z-10 text-center px-6 max-w-4xl">
+        <div className="relative z-10 text-center px-4 md:px-6 max-w-4xl">
           <div className="inline-flex items-center gap-2 bg-blue-600/20 backdrop-blur-md border border-blue-500/30 px-5 py-2.5 rounded-full mb-8">
             <ShieldCheck size={18} className="text-blue-400" />
             <span className="text-[11px] font-black uppercase tracking-[0.2em]">Servicio 100% Certificado</span>
           </div>
-          <h1 className="text-6xl md:text-8xl font-black mb-8 tracking-tighter uppercase leading-[0.85]">Especialistas <br/><span className="text-blue-500">en Frío</span></h1>
-          <p className="text-blue-100/70 font-bold uppercase text-xs tracking-[0.3em] mb-12 max-w-xl mx-auto">Soluciones técnicas definitivas para tu hogar y negocio.</p>
+          {/* AJUSTE RESPONSIVO: Se redujo el tamaño de fuente y tracking en móvil para evitar cortes */}
+          <h1 className="text-4xl sm:text-6xl md:text-8xl font-black mb-8 tracking-tight md:tracking-tighter uppercase leading-[0.9] md:leading-[0.85]">
+            Especialistas <br/>
+            <span className="text-blue-500">en Frío</span>
+          </h1>
+          {/* AJUSTE RESPONSIVO: Se redujo el tracking exagerado en móviles */}
+          <p className="text-blue-100/70 font-bold uppercase text-[10px] sm:text-xs tracking-wider sm:tracking-[0.3em] mb-12 max-w-xl mx-auto px-4">
+            Soluciones técnicas definitivas para tu hogar y negocio.
+          </p>
           <div className="flex flex-col sm:flex-row justify-center gap-5">
             <button onClick={() => setView('catalog')} className="bg-blue-600 hover:bg-blue-500 px-14 py-6 rounded-2xl font-black shadow-2xl transition-all hover:scale-105 uppercase text-xs tracking-widest">Ver Catálogo</button>
             <a href={`https://wa.me/${WHATSAPP_NUMBER}`} target="_blank" rel="noopener noreferrer" className="bg-white text-blue-950 px-14 py-6 rounded-2xl font-black shadow-2xl transition-all hover:bg-gray-100 uppercase text-xs tracking-widest">Agendar Cita</a>
