@@ -147,28 +147,43 @@ export default function App() {
     if (!selectedProduct) return null;
     const images = getProductImages(selectedProduct);
     const videoEmbed = getYouTubeEmbedUrl(selectedProduct.videoUrl);
+    const maxIdx = videoEmbed ? images.length : images.length - 1;
     const hasMultipleMedia = images.length > 1 || videoEmbed;
+
+    const nextMedia = (e) => {
+        e.stopPropagation();
+        setCurrentGalleryIdx(prev => (prev < maxIdx ? prev + 1 : 0));
+    };
+
+    const prevMedia = (e) => {
+        e.stopPropagation();
+        setCurrentGalleryIdx(prev => (prev > 0 ? prev - 1 : maxIdx));
+    };
 
     return (
       <div className="fixed inset-0 z-[200] flex items-center justify-center p-2 md:p-10">
         <div className="absolute inset-0 bg-slate-950/95 backdrop-blur-xl" onClick={() => setSelectedProduct(null)}></div>
         <div className="relative bg-white w-full max-w-6xl max-h-[95vh] rounded-[40px] overflow-hidden shadow-2xl flex flex-col md:flex-row animate-in zoom-in duration-300">
+          
+          {/* Botón Cerrar */}
           <button 
-            className="absolute top-6 right-6 z-50 bg-slate-100/80 backdrop-blur-md p-3 rounded-2xl hover:bg-red-500 hover:text-white transition-all shadow-xl"
+            className="absolute top-4 right-4 md:top-6 md:right-6 z-[250] bg-white/90 backdrop-blur-md p-3 rounded-2xl hover:bg-red-500 hover:text-white transition-all shadow-xl text-slate-900"
             onClick={() => setSelectedProduct(null)}
           >
             <X size={24} />
           </button>
 
-          {/* Área Visual - Corregido object-contain para no cortar fotos de Coppel/Walmart */}
-          <div className="w-full md:w-3/5 bg-white flex flex-col relative h-[400px] md:h-auto border-r border-gray-100">
-            <div className="flex-grow flex items-center justify-center p-6 overflow-hidden relative group">
+          {/* Área Visual */}
+          <div className="w-full md:w-3/5 bg-white flex flex-col relative h-[350px] sm:h-[450px] md:h-auto border-r border-gray-100">
+            <div className="flex-grow flex items-center justify-center p-6 overflow-hidden relative">
+              
+              {/* Contenido (Imagen o Video) */}
               {videoEmbed && currentGalleryIdx === images.length ? (
-                <div className="w-full h-full bg-black rounded-3xl overflow-hidden shadow-2xl">
+                <div className="w-full h-full bg-black rounded-3xl overflow-hidden shadow-2xl z-10">
                   <iframe 
                     src={videoEmbed} 
                     className="w-full h-full" 
-                    title="Demostración" 
+                    title="Demostración de equipo" 
                     frameBorder="0" 
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     allowFullScreen
@@ -177,24 +192,26 @@ export default function App() {
               ) : (
                 <img 
                   src={images[currentGalleryIdx]} 
-                  className="w-full h-full object-contain transition-all duration-700 animate-in fade-in" 
+                  className="w-full h-full object-contain transition-all duration-700 animate-in fade-in z-10" 
                   alt=""
-                  title=""
                   onError={(e) => { e.target.style.display = 'none'; }}
                 />
               )}
               
+              {/* Botones de Navegación Reforzados */}
               {hasMultipleMedia && (
                 <>
                   <button 
-                    onClick={() => setCurrentGalleryIdx(prev => prev > 0 ? prev - 1 : (videoEmbed ? images.length : images.length - 1))}
-                    className="absolute left-6 bg-white/90 backdrop-blur-md p-4 rounded-2xl shadow-2xl opacity-0 group-hover:opacity-100 transition-all hover:bg-blue-600 hover:text-white"
+                    onClick={prevMedia}
+                    className="absolute left-4 z-[220] bg-white/90 backdrop-blur-md p-4 rounded-2xl shadow-2xl text-slate-900 hover:bg-blue-600 hover:text-white transition-all border border-slate-100 active:scale-90"
+                    aria-label="Anterior"
                   >
                     <ChevronLeft size={28} />
                   </button>
                   <button 
-                    onClick={() => setCurrentGalleryIdx(prev => prev < (videoEmbed ? images.length : images.length - 1) ? prev + 1 : 0)}
-                    className="absolute right-6 bg-white/90 backdrop-blur-md p-4 rounded-2xl shadow-2xl opacity-0 group-hover:opacity-100 transition-all hover:bg-blue-600 hover:text-white"
+                    onClick={nextMedia}
+                    className="absolute right-4 z-[220] bg-white/90 backdrop-blur-md p-4 rounded-2xl shadow-2xl text-slate-900 hover:bg-blue-600 hover:text-white transition-all border border-slate-100 active:scale-90"
+                    aria-label="Siguiente"
                   >
                     <ChevronRight size={28} />
                   </button>
@@ -202,22 +219,22 @@ export default function App() {
               )}
             </div>
             
-            {/* Selector de imágenes corregido */}
+            {/* Selector de fotos inferiores (Solo si hay varias) */}
             {hasMultipleMedia && (
-              <div className="p-6 flex gap-3 overflow-x-auto no-scrollbar justify-center bg-gray-50 border-t border-gray-100">
+              <div className="p-4 md:p-6 flex gap-3 overflow-x-auto no-scrollbar justify-center bg-gray-50/50 border-t border-gray-100">
                 {images.map((img, idx) => (
                   <button 
                     key={idx} 
                     onClick={() => setCurrentGalleryIdx(idx)}
-                    className={`w-16 h-16 rounded-xl overflow-hidden border-2 transition-all shrink-0 bg-white shadow-sm ${currentGalleryIdx === idx ? 'border-blue-600 scale-105 shadow-md' : 'border-transparent opacity-50 hover:opacity-100'}`}
+                    className={`w-14 h-14 md:w-16 md:h-16 rounded-xl overflow-hidden border-2 transition-all shrink-0 bg-white shadow-sm ${currentGalleryIdx === idx ? 'border-blue-600 scale-105 shadow-md' : 'border-transparent opacity-40 hover:opacity-100'}`}
                   >
-                    <img src={img} className="w-full h-full object-contain" alt="" title="" onError={(e) => { e.target.parentElement.style.display = 'none'; }} />
+                    <img src={img} className="w-full h-full object-contain" alt="" onError={(e) => { e.target.parentElement.style.display = 'none'; }} />
                   </button>
                 ))}
                 {videoEmbed && (
                   <button 
                     onClick={() => setCurrentGalleryIdx(images.length)}
-                    className={`w-16 h-16 rounded-xl overflow-hidden border-2 transition-all shrink-0 bg-slate-900 flex items-center justify-center text-white ${currentGalleryIdx === images.length ? 'border-blue-600 scale-105 shadow-md' : 'border-transparent opacity-50'}`}
+                    className={`w-14 h-14 md:w-16 md:h-16 rounded-xl overflow-hidden border-2 transition-all shrink-0 bg-slate-900 flex items-center justify-center text-white ${currentGalleryIdx === images.length ? 'border-blue-600 scale-105 shadow-md' : 'border-transparent opacity-40 hover:opacity-100'}`}
                   >
                     <Play size={24} fill="currentColor" />
                   </button>
@@ -226,25 +243,26 @@ export default function App() {
             )}
           </div>
 
+          {/* Detalles del Equipo */}
           <div className="w-full md:w-2/5 p-8 md:p-14 flex flex-col justify-between bg-white overflow-y-auto">
             <div>
               <div className="flex items-center gap-2 mb-6">
                 <span className="bg-blue-50 text-blue-600 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em]">{selectedProduct.category}</span>
                 <span className="flex items-center gap-1.5 text-green-500 text-[10px] font-black uppercase tracking-widest">
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div> En existencia
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div> Disponible
                 </span>
               </div>
-              <h2 className="text-3xl md:text-4xl font-black text-slate-900 uppercase tracking-tight leading-[0.9] mb-8">{selectedProduct.name}</h2>
+              <h2 className="text-2xl md:text-4xl font-black text-slate-900 uppercase tracking-tight leading-[0.9] mb-8">{selectedProduct.name}</h2>
               <p className="text-slate-500 font-bold uppercase text-[11px] tracking-widest leading-relaxed mb-10 whitespace-pre-wrap">{selectedProduct.description}</p>
               
               <div className="space-y-4 mb-10">
                 <div className="flex items-center gap-4 text-slate-400">
                   <ShieldCheck size={18} className="text-blue-500" />
-                  <span className="text-[10px] font-black uppercase tracking-widest">Garantía oficial RefriMaster</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest">Garantía RefriMaster incluida</span>
                 </div>
                 <div className="flex items-center gap-4 text-slate-400">
                   <Truck size={18} className="text-blue-500" />
-                  <span className="text-[10px] font-black uppercase tracking-widest">Envío e instalación a domicilio</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest">Entrega e instalación local</span>
                 </div>
               </div>
             </div>
@@ -253,7 +271,7 @@ export default function App() {
               <div className="flex items-end justify-between mb-10">
                 <div className="flex flex-col">
                   <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-2">Precio de Inversión</span>
-                  <span className="text-5xl font-black text-slate-900 tracking-tighter leading-none">${selectedProduct.price.toLocaleString()}</span>
+                  <span className="text-4xl md:text-5xl font-black text-slate-900 tracking-tighter leading-none">${selectedProduct.price.toLocaleString()}</span>
                 </div>
               </div>
               <a 
@@ -262,7 +280,7 @@ export default function App() {
                 rel="noopener noreferrer"
                 className="w-full bg-blue-600 text-white p-6 rounded-[24px] flex items-center justify-center gap-4 font-black uppercase text-xs tracking-[0.2em] shadow-2xl shadow-blue-200 hover:bg-blue-700 hover:-translate-y-1 transition-all"
               >
-                <MessageCircle size={22} /> Solicitar por WhatsApp
+                <MessageCircle size={22} /> Solicitar vía WhatsApp
               </a>
             </div>
           </div>
@@ -327,7 +345,7 @@ export default function App() {
             <span className="text-blue-600 font-black text-[11px] uppercase tracking-[0.5em] mb-4 block">Inventario Oficial</span>
             <h2 className="text-5xl md:text-7xl font-black uppercase tracking-tighter leading-none text-slate-900">Showroom <span className="text-blue-600">Master</span></h2>
           </div>
-          <div className="flex flex-wrap justify-center gap-3 bg-white p-3 rounded-3xl shadow-xl border border-gray-50">
+          <div className="flex flex-wrap justify-center gap-3 bg-white p-3 rounded-3xl shadow-xl border border-gray-100">
             {['Todos', 'Lavadora', 'Refrigerador', 'Aire Acondicionado', 'Electricidad'].map(cat => (
               <button key={cat} onClick={() => setFilter(cat)} className={`px-7 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all ${filter === cat ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'bg-transparent text-slate-400 hover:text-blue-600'}`}>{cat}</button>
             ))}
@@ -456,26 +474,26 @@ export default function App() {
   };
 
   const renderAbout = () => (
-    <div className="container mx-auto px-6 py-24 animate-in fade-in duration-700">
-      <div className="grid md:grid-cols-2 gap-24 items-center">
+    <div className="container mx-auto px-6 py-12 md:py-24 animate-in fade-in duration-700 overflow-hidden">
+      <div className="grid md:grid-cols-2 gap-12 md:gap-24 items-center">
         <div className="text-slate-900">
-          <span className="text-blue-600 font-black text-[11px] uppercase tracking-[0.6em] mb-6 block">Trayectoria Master</span>
-          <h2 className="text-6xl md:text-7xl font-black mb-10 uppercase tracking-tighter leading-[0.85]">Puntualidad <br/>y <span className="text-blue-600">Confianza.</span></h2>
-          <p className="text-slate-400 text-sm font-bold leading-relaxed mb-12 uppercase tracking-widest">RefriMaster es el estándar de calidad en Culiacán para la reparación de equipos domésticos e industriales.</p>
-          <div className="grid grid-cols-2 gap-10">
-            <div className="p-12 bg-white border border-gray-50 rounded-[45px] shadow-xl">
-                <p className="text-6xl font-black text-blue-600 tracking-tighter">10+</p>
-                <p className="text-[11px] font-black uppercase text-slate-300 mt-4 tracking-[0.3em]">Años de Servicio</p>
+          <span className="text-blue-600 font-black text-[10px] sm:text-[11px] uppercase tracking-[0.4em] sm:tracking-[0.6em] mb-6 block text-center md:text-left">Trayectoria Master</span>
+          <h2 className="text-4xl sm:text-6xl md:text-7xl font-black mb-10 uppercase tracking-tighter leading-[0.9] text-center md:text-left">Puntualidad <br className="hidden sm:block"/>y <span className="text-blue-600">Confianza.</span></h2>
+          <p className="text-slate-400 text-xs sm:text-sm font-bold leading-relaxed mb-12 uppercase tracking-widest text-center md:text-left">RefriMaster es el estándar de calidad en Culiacán para la reparación de equipos domésticos e industriales.</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 md:gap-10">
+            <div className="p-8 md:p-12 bg-white border border-gray-50 rounded-[35px] md:rounded-[45px] shadow-xl text-center">
+                <p className="text-5xl md:text-6xl font-black text-blue-600 tracking-tighter">10+</p>
+                <p className="text-[10px] md:text-[11px] font-black uppercase text-slate-300 mt-4 tracking-[0.2em] md:tracking-[0.3em]">Años de Servicio</p>
             </div>
-            <div className="p-12 bg-white border border-gray-50 rounded-[45px] shadow-xl">
-                <p className="text-6xl font-black text-blue-600 tracking-tighter">100%</p>
-                <p className="text-[11px] font-black uppercase text-slate-300 mt-4 tracking-[0.3em]">Garantía Real</p>
+            <div className="p-8 md:p-12 bg-white border border-gray-100 rounded-[35px] md:rounded-[45px] shadow-xl text-center">
+                <p className="text-5xl md:text-6xl font-black text-blue-600 tracking-tighter">100%</p>
+                <p className="text-[10px] md:text-[11px] font-black uppercase text-slate-300 mt-4 tracking-[0.2em] md:tracking-[0.3em]">Garantía Real</p>
             </div>
           </div>
         </div>
-        <div className="relative">
-            <div className="absolute -top-12 -left-12 w-48 h-48 bg-blue-600/10 blur-[80px] rounded-full"></div>
-            <img src="https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&q=80&w=1000" className="rounded-[60px] shadow-3xl relative z-10 hover:scale-105 transition-transform duration-1000" alt="" />
+        <div className="relative mt-12 md:mt-0">
+            <div className="absolute -top-6 md:-top-12 -left-6 md:-left-12 w-32 md:w-48 h-32 md:h-48 bg-blue-600/10 blur-[60px] md:blur-[80px] rounded-full"></div>
+            <img src="https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&q=80&w=1000" className="rounded-[40px] md:rounded-[60px] shadow-3xl relative z-10 hover:scale-105 transition-transform duration-1000 w-full" alt="" />
         </div>
       </div>
     </div>
