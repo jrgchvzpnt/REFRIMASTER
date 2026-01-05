@@ -12,8 +12,7 @@ import {
 import { 
   getAuth, 
   signInAnonymously, 
-  signInWithCustomToken,
-  signInWithEmailAndPassword, // Añadido para acceso real
+  signInWithEmailAndPassword, 
   signOut,
   onAuthStateChanged 
 } from 'firebase/auth';
@@ -45,11 +44,13 @@ const firebaseConfig = {
   measurementId: "G-FQS2HRRF98"
 };
 
-
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const appId = 'refrimaster-oficial';
+
+// CONFIGURACIÓN GLOBAL DE WHATSAPP
+const WHATSAPP_NUMBER = "+526673312378"; // Tu número corregido
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -59,12 +60,10 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
-  // Estados para el login de administrador
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isAdmin, setIsAdmin] = useState(false);
 
-  // Formulario Admin
   const [newProduct, setNewProduct] = useState({
     name: '',
     price: '',
@@ -73,12 +72,9 @@ export default function App() {
     imageUrl: ''
   });
 
-  // 1. Lógica de Autenticación
-  // 1. Lógica de Autenticación
   useEffect(() => {
     const initAuth = async () => {
       try {
-        // Entramos directamente como anónimo para ver el catálogo
         await signInAnonymously(auth);
       } catch (err) {
         console.error("Error de Autenticación:", err);
@@ -89,12 +85,11 @@ export default function App() {
     const unsubscribe = onAuthStateChanged(auth, (u) => {
       setUser(u);
       setIsAdmin(!!u?.email);
-      setLoading(false); // ESTO es lo que quita la pantalla de carga
+      setLoading(false);
     });
     return () => unsubscribe();
   }, []);
 
-  // 2. Carga de Datos
   useEffect(() => {
     if (!user) return;
 
@@ -115,7 +110,6 @@ export default function App() {
     return () => unsubscribe();
   }, [user]);
 
-  // Funciones de Autenticación de Dueño
   const handleAdminLogin = async (e) => {
     e.preventDefault();
     setError(null);
@@ -136,7 +130,6 @@ export default function App() {
     setView('home');
   };
 
-  // Funciones de Base de Datos
   const addProduct = async (e) => {
     e.preventDefault();
     if (!isAdmin) {
@@ -165,8 +158,6 @@ export default function App() {
       setError("Error al eliminar el artículo.");
     }
   };
-
-  // --- COMPONENTES DE VISTA ---
 
   const renderLogin = () => (
     <div className="max-w-md mx-auto px-6 py-20 animate-in zoom-in-95 duration-300">
@@ -221,7 +212,12 @@ export default function App() {
             <button onClick={() => setView('catalog')} className="bg-blue-600 hover:bg-blue-500 px-10 py-4 rounded-full font-bold transition-all shadow-lg hover:shadow-blue-500/50">
               Explorar Tienda
             </button>
-            <a href="https://wa.me/+526673312378" target="_blank" rel="noreferrer" className="bg-white text-blue-900 hover:bg-gray-100 px-10 py-4 rounded-full font-bold transition-all shadow-lg">
+            <a 
+              href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent("Hola RefriMaster, solicito un técnico a domicilio.")}`} 
+              target="_blank" 
+              rel="noreferrer" 
+              className="bg-white text-blue-900 hover:bg-gray-100 px-10 py-4 rounded-full font-bold transition-all shadow-lg"
+            >
               Solicitar Técnico
             </a>
           </div>
@@ -291,7 +287,7 @@ export default function App() {
                     <span className="text-3xl font-black text-blue-600">${p.price}</span>
                   </div>
                   <a 
-                    href={`https://wa.me/6673312378?text=Hola, me interesa el equipo: ${p.name}`}
+                    href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(`Hola RefriMaster, me interesa el equipo: ${p.name}. ¿Sigue disponible?`)}`}
                     target="_blank"
                     rel="noreferrer"
                     className="bg-blue-600 text-white p-4 rounded-2xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-200"
@@ -443,7 +439,12 @@ export default function App() {
               </button>
             )}
             
-            <a href="https://wa.me/6673312378" target="_blank" rel="noreferrer" className="bg-blue-600 text-white px-8 py-3.5 rounded-2xl hover:bg-blue-700 transition-all shadow-xl shadow-blue-100">
+            <a 
+              href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent("Hola RefriMaster, necesito información sobre un servicio.")}`} 
+              target="_blank" 
+              rel="noreferrer" 
+              className="bg-blue-600 text-white px-8 py-3.5 rounded-2xl hover:bg-blue-700 transition-all shadow-xl shadow-blue-100"
+            >
               WhatsApp
             </a>
           </div>
@@ -468,7 +469,7 @@ export default function App() {
               Tu aliado de confianza en el mantenimiento de electrodomésticos. No solo arreglamos aparatos, devolvemos la tranquilidad a tu hogar.
             </p>
             <div className="flex gap-4">
-               <div className="bg-white/5 p-4 rounded-2xl hover:bg-blue-600 transition-colors cursor-pointer"><Phone className="w-6 h-6"/></div>
+               <a href={`https://wa.me/${WHATSAPP_NUMBER}`} target="_blank" rel="noreferrer" className="bg-white/5 p-4 rounded-2xl hover:bg-blue-600 transition-colors cursor-pointer"><Phone className="w-6 h-6"/></a>
                <div className="bg-white/5 p-4 rounded-2xl hover:bg-blue-600 transition-colors cursor-pointer"><MapPin className="w-6 h-6"/></div>
             </div>
           </div>
