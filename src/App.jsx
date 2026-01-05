@@ -221,8 +221,11 @@ export default function App() {
             <button onClick={() => setView('catalog')} className="bg-blue-600 hover:bg-blue-500 px-10 py-4 rounded-full font-bold transition-all shadow-lg hover:shadow-blue-500/50">
               Explorar Tienda
             </button>
-            <a href="https://wa.me/6673312378" target="_blank" rel="noreferrer" className="bg-white text-blue-900 hover:bg-gray-100 px-10 py-4 rounded-full font-bold transition-all shadow-lg">
-              Solicitar Técnico
+            <a href={`https://wa.me/526673312378?text=${encodeURIComponent(`Hola RefriMaster, me interesa el equipo: ${p.name}. ¿Sigue disponible?`)}`}
+              target="_blank"
+              rel="noreferrer"
+              className="bg-blue-600 text-white p-4 rounded-2xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-200"
+            > <ShoppingBag className="w-6 h-6" />
             </a>
           </div>
         </div>
