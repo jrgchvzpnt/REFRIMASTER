@@ -221,7 +221,7 @@ export default function App() {
             <button onClick={() => setView('catalog')} className="bg-blue-600 hover:bg-blue-500 px-10 py-4 rounded-full font-bold transition-all shadow-lg hover:shadow-blue-500/50">
               Explorar Tienda
             </button>
-            <a href="https://wa.me/526673312378" target="_blank" rel="noreferrer" className="bg-white text-blue-900 hover:bg-gray-100 px-10 py-4 rounded-full font-bold transition-all shadow-lg">
+            <a href="https://wa.me/+526673312378" target="_blank" rel="noreferrer" className="bg-white text-blue-900 hover:bg-gray-100 px-10 py-4 rounded-full font-bold transition-all shadow-lg">
               Solicitar Técnico
             </a>
           </div>
