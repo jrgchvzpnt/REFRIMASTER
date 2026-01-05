@@ -354,8 +354,25 @@ export default function App() {
                   </select>
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-black text-gray-400 uppercase ml-1">Imagen (Link)</label>
+                  <label className="text-xs font-black text-gray-400 uppercase ml-1">Imagen (Link Directo .jpg o .png)</label>
                   <input required className="w-full p-4 rounded-2xl bg-gray-50 border-none focus:ring-2 focus:ring-blue-500 outline-none font-medium text-sm" placeholder="URL de la foto..." value={newProduct.imageUrl} onChange={(e) => setNewProduct({...newProduct, imageUrl: e.target.value})} />
+                  {/* Vista previa de la imagen */}
+                  {newProduct.imageUrl && (
+                    <div className="mt-4 p-2 bg-blue-50 rounded-2xl border-2 border-dashed border-blue-200">
+                      <p className="text-[10px] font-black text-blue-400 uppercase text-center mb-2 tracking-widest">
+                        Vista Previa
+                      </p>
+                      <img 
+                        src={newProduct.imageUrl} 
+                        alt="Preview" 
+                        className="w-full h-40 object-cover rounded-xl shadow-md"
+                        onError={(e) => {
+                          e.target.src = "https://placehold.co/600x400?text=Link+Invalido";
+                          alert("El link no es directo. Recuerda usar el que termina en .jpg o .png");
+                        }}
+                      />
+                    </div>
+                  )}
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-xs font-black text-gray-400 uppercase ml-1">Descripción</label>
