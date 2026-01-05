@@ -246,51 +246,62 @@ export default function App() {
     </div>
   );
 
-  const renderCatalog = () => (
+ const renderCatalog = () => (
     <div className="container mx-auto px-6 py-12 animate-in slide-in-from-bottom-4 duration-500">
       <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-4">
         <div>
-          <h2 className="text-4xl font-bold text-gray-900 mb-2">Equipos Disponibles</h2>
-          <p className="text-gray-500">Artículos revisados y listos para entrega inmediata.</p>
+          <h2 className="text-4xl font-black text-gray-900 mb-2 tracking-tight">Equipos Disponibles</h2>
+          <p className="text-gray-500 font-medium">Calidad garantizada para tu tranquilidad.</p>
         </div>
-        <div className="bg-blue-50 px-4 py-2 rounded-full text-blue-700 font-bold text-sm">
-          {products.length} Equipos en inventario
+        <div className="bg-blue-600 px-6 py-2 rounded-full text-white font-bold text-sm shadow-lg shadow-blue-200">
+          {products.length} Equipos en total
         </div>
       </div>
       
       {products.length === 0 ? (
-        <div className="text-center py-24 bg-gray-50 rounded-[40px] border-2 border-dashed border-gray-200">
-          <Package className="w-20 h-20 text-gray-300 mx-auto mb-6" />
+        <div className="text-center py-24 bg-white rounded-[40px] border-2 border-dashed border-blue-100 shadow-sm">
+          <Package className="w-20 h-20 text-blue-100 mx-auto mb-6" />
           <h3 className="text-xl font-bold text-gray-400">Nuestro catálogo se está actualizando</h3>
-          <p className="text-gray-400 mt-2">Vuelve pronto para ver nuestras novedades.</p>
+          <p className="text-gray-400 mt-2 font-medium">Vuelve pronto para ver nuestras novedades.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
           {products.map((p) => (
-            <div key={p.id} className="bg-white rounded-[32px] overflow-hidden border border-gray-100 shadow-sm hover:shadow-2xl transition-all group">
-              <div className="h-64 overflow-hidden relative">
+            <div key={p.id} className="group bg-white rounded-[35px] overflow-hidden border border-gray-100 shadow-sm hover:shadow-[0_20px_50px_rgba(0,0,0,0.1)] transition-all duration-500 flex flex-col h-full">
+              {/* Contenedor de Imagen con Overlay */}
+              <div className="h-72 overflow-hidden relative">
                 <img 
                   src={p.imageUrl || "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&q=80&w=1000"} 
                   alt={p.name}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000"
                 />
-                <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-md text-blue-900 px-4 py-1.5 rounded-full text-xs font-black uppercase shadow-sm">
+                <div className="absolute top-5 left-5 bg-white/80 backdrop-blur-md text-blue-700 px-5 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg">
                   {p.category}
                 </div>
               </div>
-              <div className="p-8">
-                <h3 className="font-bold text-xl mb-2 text-gray-800">{p.name}</h3>
-                <p className="text-gray-500 text-sm mb-6 line-clamp-2 leading-relaxed">{p.description}</p>
-                <div className="flex justify-between items-center">
+
+              {/* Contenido de la Tarjeta */}
+              <div className="p-8 flex flex-col flex-grow bg-gradient-to-b from-white to-gray-50/50">
+                <h3 className="font-black text-2xl mb-3 text-gray-800 leading-tight group-hover:text-blue-600 transition-colors">{p.name}</h3>
+                <p className="text-gray-500 text-sm mb-8 line-clamp-3 leading-relaxed font-medium">
+                  {p.description}
+                </p>
+                
+                {/* Footer de la tarjeta: Precio y Botón */}
+                <div className="mt-auto pt-6 border-t border-gray-100 flex justify-between items-center">
                   <div className="flex flex-col">
-                    <span className="text-xs text-gray-400 font-bold uppercase">Precio</span>
-                    <span className="text-3xl font-black text-blue-600">${p.price}</span>
+                    <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1">Precio Especial</span>
+                    <div className="flex items-start">
+                      <span className="text-lg font-bold text-blue-600 mt-1">$</span>
+                      <span className="text-3xl font-black text-gray-900 tracking-tighter">{p.price.toLocaleString()}</span>
+                    </div>
                   </div>
+                  
                   <a 
                     href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(`Hola RefriMaster, me interesa el equipo: ${p.name}. ¿Sigue disponible?`)}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="bg-blue-600 text-white p-4 rounded-2xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-200"
+                    className="bg-blue-600 text-white p-5 rounded-[22px] hover:bg-blue-700 hover:rotate-6 transition-all shadow-xl shadow-blue-100 group-active:scale-90"
                   >
                     <ShoppingBag className="w-6 h-6" />
                   </a>
