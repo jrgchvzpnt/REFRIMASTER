@@ -7,7 +7,7 @@ import {
   onSnapshot, 
   deleteDoc, 
   doc, 
-  query 
+  updateDoc // Añadido para editar
 } from 'firebase/firestore';
 import { 
   getAuth, 
@@ -30,7 +30,8 @@ import {
   Package,
   Menu,
   X,
-  Lock
+  Lock,
+  Edit3 // Icono para editar
 } from 'lucide-react';
 
 // --- CONFIGURACIÓN DE FIREBASE ---
@@ -49,8 +50,7 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const appId = 'refrimaster-oficial';
 
-// CONFIGURACIÓN GLOBAL DE WHATSAPP
-const WHATSAPP_NUMBER = "+526673312378"; // Tu número corregido
+const WHATSAPP_NUMBER = "+526673312378"; 
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -63,6 +63,9 @@ export default function App() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isAdmin, setIsAdmin] = useState(false);
+
+  // ESTADO PARA EDICIÓN
+  const [editingId, setEditingId] = useState(null);
 
   const [newProduct, setNewProduct] = useState({
     name: '',
@@ -103,7 +106,7 @@ export default function App() {
       }, 
       (err) => {
         console.error("Error de Firestore:", err);
-        setError("Error de permisos. El admin debe estar logueado para editar.");
+        setError("Error de permisos.");
       }
     );
 
@@ -119,7 +122,7 @@ export default function App() {
       setEmail('');
       setPassword('');
     } catch (err) {
-      setError("Credenciales incorrectas. Intenta de nuevo.");
+      setError("Credenciales incorrectas.");
     }
   };
 
@@ -130,32 +133,60 @@ export default function App() {
     setView('home');
   };
 
-  const addProduct = async (e) => {
+  // FUNCIÓN PARA GUARDAR O ACTUALIZAR
+  const handleSubmitProduct = async (e) => {
     e.preventDefault();
-    if (!isAdmin) {
-      setError("Debes ser administrador para añadir productos.");
-      return;
-    }
+    if (!isAdmin) return;
+
     try {
-      await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'products'), {
+      const productData = {
         ...newProduct,
         price: parseFloat(newProduct.price),
-        createdAt: new Date().toISOString(),
-        userId: user.uid
-      });
+        updatedAt: new Date().toISOString()
+      };
+
+      if (editingId) {
+        // ACTUALIZAR EXISTENTE
+        const productRef = doc(db, 'artifacts', appId, 'public', 'data', 'products', editingId);
+        await updateDoc(productRef, productData);
+        setEditingId(null);
+        alert("¡Producto actualizado!");
+      } else {
+        // CREAR NUEVO
+        await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'products'), {
+          ...productData,
+          createdAt: new Date().toISOString(),
+          userId: user.uid
+        });
+        alert("¡Producto publicado!");
+      }
+
       setNewProduct({ name: '', price: '', category: 'Lavadora', description: '', imageUrl: '' });
       setView('catalog');
     } catch (err) {
-      setError("No se pudo guardar. Verifica tus permisos en Firebase.");
+      alert("Error al guardar cambios.");
     }
   };
 
+  // CARGAR DATOS PARA EDITAR
+  const startEdit = (p) => {
+    setEditingId(p.id);
+    setNewProduct({
+      name: p.name,
+      price: p.price,
+      category: p.category,
+      description: p.description,
+      imageUrl: p.imageUrl
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const deleteProduct = async (id) => {
-    if (!isAdmin) return;
+    if (!isAdmin || !window.confirm("¿Seguro que quieres borrar este equipo?")) return;
     try {
       await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', id));
     } catch (err) {
-      setError("Error al eliminar el artículo.");
+      setError("Error al eliminar.");
     }
   };
 
@@ -166,33 +197,13 @@ export default function App() {
           <Lock className="text-blue-600 w-10 h-10" />
         </div>
         <h2 className="text-3xl font-black text-gray-900 mb-2">Acceso Dueño</h2>
-        <p className="text-gray-500 mb-8">Ingresa tus credenciales para gestionar el inventario.</p>
-        
         <form onSubmit={handleAdminLogin} className="space-y-4">
-          <input 
-            type="email" 
-            placeholder="Correo electrónico" 
-            className="w-full p-4 rounded-2xl bg-gray-50 border-none focus:ring-2 focus:ring-blue-500 outline-none font-medium"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-          <input 
-            type="password" 
-            placeholder="Contraseña" 
-            className="w-full p-4 rounded-2xl bg-gray-50 border-none focus:ring-2 focus:ring-blue-500 outline-none font-medium"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
+          <input type="email" placeholder="Correo electrónico" className="w-full p-4 rounded-2xl bg-gray-50 border-none outline-none font-medium" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          <input type="password" placeholder="Contraseña" className="w-full p-4 rounded-2xl bg-gray-50 border-none outline-none font-medium" value={password} onChange={(e) => setPassword(e.target.value)} required />
           {error && <p className="text-red-500 text-sm font-bold">{error}</p>}
-          <button type="submit" className="w-full bg-blue-600 text-white font-bold py-5 rounded-2xl hover:bg-blue-700 transition-all shadow-lg">
-            Entrar al Panel
-          </button>
+          <button type="submit" className="w-full bg-blue-600 text-white font-bold py-5 rounded-2xl hover:bg-blue-700 transition-all shadow-lg">Entrar al Panel</button>
         </form>
-        <button onClick={() => setView('home')} className="mt-6 text-gray-400 font-bold hover:text-gray-600 text-sm">
-          Volver al Inicio
-        </button>
+        <button onClick={() => setView('home')} className="mt-6 text-gray-400 font-bold hover:text-gray-600 text-sm">Volver al Inicio</button>
       </div>
     </div>
   );
@@ -200,132 +211,83 @@ export default function App() {
   const renderHome = () => (
     <div className="space-y-16 pb-20 animate-in fade-in duration-500">
       <section className="relative h-[500px] flex items-center justify-center text-white overflow-hidden rounded-3xl mt-4 mx-4 shadow-2xl">
-        <img 
-          src="https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?auto=format&fit=crop&q=80&w=2070" 
-          className="absolute inset-0 w-full h-full object-cover brightness-[0.4]"
-          alt="Taller"
-        />
+        <img src="https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?auto=format&fit=crop&q=80&w=2070" className="absolute inset-0 w-full h-full object-cover brightness-[0.4]" alt="Taller" />
         <div className="relative z-10 text-center px-6 max-w-3xl">
           <h1 className="text-5xl md:text-6xl font-black mb-6 tracking-tight leading-tight">Soluciones Reales para tu Hogar</h1>
-          <p className="text-xl mb-10 text-blue-100">Reparación certificada y venta de equipos premium con garantía total.</p>
+          <p className="text-xl mb-10 text-blue-100">Reparación certificada y venta de equipos premium.</p>
           <div className="flex flex-wrap justify-center gap-4">
-            <button onClick={() => setView('catalog')} className="bg-blue-600 hover:bg-blue-500 px-10 py-4 rounded-full font-bold transition-all shadow-lg hover:shadow-blue-500/50">
-              Explorar Tienda
-            </button>
-            <a 
-              href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent("Hola RefriMaster, solicito un técnico a domicilio.")}`} 
-              target="_blank" 
-              rel="noreferrer" 
-              className="bg-white text-blue-900 hover:bg-gray-100 px-10 py-4 rounded-full font-bold transition-all shadow-lg"
-            >
-              Solicitar Técnico
-            </a>
+            <button onClick={() => setView('catalog')} className="bg-blue-600 hover:bg-blue-500 px-10 py-4 rounded-full font-bold transition-all shadow-lg">Explorar Tienda</button>
+            <a href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent("Hola RefriMaster, solicito un técnico a domicilio.")}`} target="_blank" rel="noreferrer" className="bg-white text-blue-900 px-10 py-4 rounded-full font-bold shadow-lg">Solicitar Técnico</a>
           </div>
         </div>
       </section>
 
-      <section className="container mx-auto px-6">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold text-gray-900 mb-4">¿Qué necesitas hoy?</h2>
-          <div className="h-1.5 w-24 bg-blue-600 mx-auto rounded-full"></div>
-        </div>
-        <div className="grid md:grid-cols-3 gap-8">
-          {[
-            { title: 'Refrigeración', icon: <Refrigerator className="w-12 h-12 text-blue-600"/>, desc: 'Especialistas en carga de gas, compresores y tarjetas electrónicas.' },
-            { title: 'Lavado', icon: <Wrench className="w-12 h-12 text-blue-600"/>, desc: 'Arreglamos transmisiones, bombas y sensores de todas las marcas.' },
-            { title: 'Climatización', icon: <Wind className="w-12 h-12 text-blue-600"/>, desc: 'Instalación profesional y mantenimiento preventivo para aire puro.' },
-          ].map((item, i) => (
-            <div key={i} className="group p-10 bg-white rounded-3xl shadow-sm border border-gray-100 hover:border-blue-200 hover:shadow-xl transition-all text-center">
-              <div className="mb-6 flex justify-center transform group-hover:scale-110 transition-transform">{item.icon}</div>
-              <h3 className="text-2xl font-bold mb-4">{item.title}</h3>
-              <p className="text-gray-600 leading-relaxed">{item.desc}</p>
+      <section className="container mx-auto px-6 text-center">
+          <h2 className="text-4xl font-bold text-gray-900 mb-16">¿Qué necesitas hoy?</h2>
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="p-10 bg-white rounded-3xl shadow-sm border border-gray-100 text-center">
+                <Refrigerator className="w-12 h-12 text-blue-600 mx-auto mb-4"/>
+                <h3 className="text-2xl font-bold mb-4">Refrigeración</h3>
+                <p className="text-gray-600">Carga de gas y compresores.</p>
             </div>
-          ))}
-        </div>
+            <div className="p-10 bg-white rounded-3xl shadow-sm border border-gray-100 text-center">
+                <Wrench className="w-12 h-12 text-blue-600 mx-auto mb-4"/>
+                <h3 className="text-2xl font-bold mb-4">Lavado</h3>
+                <p className="text-gray-600">Mantenimiento y refacciones.</p>
+            </div>
+            <div className="p-10 bg-white rounded-3xl shadow-sm border border-gray-100 text-center">
+                <Wind className="w-12 h-12 text-blue-600 mx-auto mb-4"/>
+                <h3 className="text-2xl font-bold mb-4">Aires</h3>
+                <p className="text-gray-600">Instalación y limpieza.</p>
+            </div>
+          </div>
       </section>
     </div>
   );
 
- const renderCatalog = () => (
+  const renderCatalog = () => (
     <div className="container mx-auto px-6 py-12 animate-in slide-in-from-bottom-4 duration-500">
       <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-4">
         <div>
-          <h2 className="text-4xl font-black text-gray-900 mb-2 tracking-tight">Equipos Disponibles</h2>
-          <p className="text-gray-500 font-medium">Calidad garantizada para tu tranquilidad.</p>
+          <h2 className="text-4xl font-black text-gray-900 mb-2">Equipos Disponibles</h2>
+          <p className="text-gray-500">Calidad garantizada.</p>
         </div>
-        <div className="bg-blue-600 px-6 py-2 rounded-full text-white font-bold text-sm shadow-lg shadow-blue-200">
-          {products.length} Equipos en total
+        <div className="bg-blue-600 px-6 py-2 rounded-full text-white font-bold text-sm shadow-lg">
+          {products.length} Equipos
         </div>
       </div>
-      
-      {products.length === 0 ? (
-        <div className="text-center py-24 bg-white rounded-[40px] border-2 border-dashed border-blue-100 shadow-sm">
-          <Package className="w-20 h-20 text-blue-100 mx-auto mb-6" />
-          <h3 className="text-xl font-bold text-gray-400">Nuestro catálogo se está actualizando</h3>
-          <p className="text-gray-400 mt-2 font-medium">Vuelve pronto para ver nuestras novedades.</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-          {products.map((p) => (
-            <div key={p.id} className="group bg-white rounded-[35px] overflow-hidden border border-gray-100 shadow-sm hover:shadow-[0_20px_50px_rgba(0,0,0,0.1)] transition-all duration-500 flex flex-col h-full">
-              {/* Contenedor de Imagen con Overlay */}
-              <div className="h-72 overflow-hidden relative">
-                <img 
-                  src={p.imageUrl || "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&q=80&w=1000"} 
-                  alt={p.name}
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000"
-                />
-                <div className="absolute top-5 left-5 bg-white/80 backdrop-blur-md text-blue-700 px-5 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg">
-                  {p.category}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+        {products.map((p) => (
+          <div key={p.id} className="group bg-white rounded-[35px] overflow-hidden border border-gray-100 shadow-sm hover:shadow-2xl transition-all duration-500 flex flex-col h-full">
+            <div className="h-72 overflow-hidden relative">
+              <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" />
+              <div className="absolute top-5 left-5 bg-white/80 backdrop-blur-md text-blue-700 px-5 py-2 rounded-2xl text-[10px] font-black uppercase shadow-lg">{p.category}</div>
+            </div>
+            <div className="p-8 flex flex-col flex-grow">
+              <h3 className="font-black text-2xl mb-3 text-gray-800 leading-tight">{p.name}</h3>
+              <p className="text-gray-500 text-sm mb-8 line-clamp-3 font-medium">{p.description}</p>
+              <div className="mt-auto pt-6 border-t flex justify-between items-center">
+                <div className="flex flex-col">
+                  <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1">Precio</span>
+                  <span className="text-3xl font-black text-gray-900">${p.price.toLocaleString()}</span>
                 </div>
-              </div>
-
-              {/* Contenido de la Tarjeta */}
-              <div className="p-8 flex flex-col flex-grow bg-gradient-to-b from-white to-gray-50/50">
-                <h3 className="font-black text-2xl mb-3 text-gray-800 leading-tight group-hover:text-blue-600 transition-colors">{p.name}</h3>
-                <p className="text-gray-500 text-sm mb-8 line-clamp-3 leading-relaxed font-medium">
-                  {p.description}
-                </p>
-                
-                {/* Footer de la tarjeta: Precio y Botón */}
-                <div className="mt-auto pt-6 border-t border-gray-100 flex justify-between items-center">
-                  <div className="flex flex-col">
-                    <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1">Precio Especial</span>
-                    <div className="flex items-start">
-                      <span className="text-lg font-bold text-blue-600 mt-1">$</span>
-                      <span className="text-3xl font-black text-gray-900 tracking-tighter">{p.price.toLocaleString()}</span>
-                    </div>
-                  </div>
-                  
-                  <a 
-                    href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(`Hola RefriMaster, me interesa el equipo: ${p.name}. ¿Sigue disponible?`)}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="bg-blue-600 text-white p-5 rounded-[22px] hover:bg-blue-700 hover:rotate-6 transition-all shadow-xl shadow-blue-100 group-active:scale-90"
-                  >
-                    <ShoppingBag className="w-6 h-6" />
-                  </a>
-                </div>
+                <a href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(`Hola RefriMaster, me interesa: ${p.name}`)}`} target="_blank" rel="noreferrer" className="bg-blue-600 text-white p-5 rounded-[22px] shadow-xl shadow-blue-100 hover:rotate-6 transition-all"><ShoppingBag /></a>
               </div>
             </div>
-          ))}
-        </div>
-      )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 
   const renderAdmin = () => {
     if (!isAdmin) return renderLogin();
-
     return (
-      <div className="max-w-5xl mx-auto px-6 py-12 animate-in fade-in duration-500">
+      <div className="max-w-5xl mx-auto px-6 py-12 animate-in fade-in">
         <div className="mb-10 flex justify-between items-center">
-          <div>
-            <h2 className="text-4xl font-black text-gray-900 mb-2">Panel Maestro</h2>
-            <p className="text-gray-500 font-medium">Control total sobre tus artículos en venta.</p>
-          </div>
+          <h2 className="text-4xl font-black text-gray-900">Panel Maestro</h2>
           <button onClick={handleLogout} className="bg-red-50 text-red-600 px-6 py-3 rounded-2xl font-bold flex items-center gap-2 hover:bg-red-600 hover:text-white transition-all">
-            <LogOut className="w-5 h-5" /> Cerrar Sesión
+            <LogOut size={20}/> Cerrar Sesión
           </button>
         </div>
         
@@ -333,163 +295,81 @@ export default function App() {
           <div className="lg:col-span-1">
             <div className="bg-white p-8 rounded-[32px] border border-gray-100 shadow-xl sticky top-28">
               <h3 className="text-xl font-bold mb-6 flex items-center gap-3 text-blue-600">
-                <Plus className="w-6 h-6" /> Nuevo Artículo
+                {editingId ? <Edit3 /> : <Plus />} {editingId ? "Editar Equipo" : "Nuevo Equipo"}
               </h3>
-              <form onSubmit={addProduct} className="space-y-5">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-black text-gray-400 uppercase ml-1">Nombre</label>
-                  <input required className="w-full p-4 rounded-2xl bg-gray-50 border-none focus:ring-2 focus:ring-blue-500 outline-none font-medium" placeholder="Lavadora Samsung..." value={newProduct.name} onChange={(e) => setNewProduct({...newProduct, name: e.target.value})} />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-black text-gray-400 uppercase ml-1">Precio ($)</label>
-                  <input required type="number" className="w-full p-4 rounded-2xl bg-gray-50 border-none focus:ring-2 focus:ring-blue-500 outline-none font-medium" placeholder="0.00" value={newProduct.price} onChange={(e) => setNewProduct({...newProduct, price: e.target.value})} />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-black text-gray-400 uppercase ml-1">Categoría</label>
-                  <select className="w-full p-4 rounded-2xl bg-gray-50 border-none focus:ring-2 focus:ring-blue-500 outline-none font-medium appearance-none" value={newProduct.category} onChange={(e) => setNewProduct({...newProduct, category: e.target.value})}>
-                    <option>Lavadora</option>
-                    <option>Refrigerador</option>
-                    <option>Aire Acondicionado</option>
-                    <option>Secadora</option>
-                  </select>
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-black text-gray-400 uppercase ml-1">Imagen (Link Directo .jpg o .png)</label>
-                  <input required className="w-full p-4 rounded-2xl bg-gray-50 border-none focus:ring-2 focus:ring-blue-500 outline-none font-medium text-sm" placeholder="URL de la foto..." value={newProduct.imageUrl} onChange={(e) => setNewProduct({...newProduct, imageUrl: e.target.value})} />
-                  {/* Vista previa de la imagen */}
-                  {newProduct.imageUrl && (
-                    <div className="mt-4 p-2 bg-blue-50 rounded-2xl border-2 border-dashed border-blue-200">
-                      <p className="text-[10px] font-black text-blue-400 uppercase text-center mb-2 tracking-widest">
-                        Vista Previa
-                      </p>
-                      <img 
-                        src={newProduct.imageUrl} 
-                        alt="Preview" 
-                        className="w-full h-40 object-cover rounded-xl shadow-md"
-                        onError={(e) => {
-                          e.target.src = "https://placehold.co/600x400?text=Link+Invalido";
-                          alert("El link no es directo. Recuerda usar el que termina en .jpg o .png");
-                        }}
-                      />
-                    </div>
-                  )}
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-black text-gray-400 uppercase ml-1">Descripción</label>
-                  <textarea required className="w-full p-4 rounded-2xl bg-gray-50 border-none focus:ring-2 focus:ring-blue-500 outline-none font-medium h-32 resize-none" placeholder="Detalles del equipo..." value={newProduct.description} onChange={(e) => setNewProduct({...newProduct, description: e.target.value})} />
-                </div>
-                <button type="submit" className="w-full bg-blue-600 text-white font-bold py-5 rounded-2xl hover:bg-blue-700 transition-all shadow-lg">
-                  Publicar Ahora
+              <form onSubmit={handleSubmitProduct} className="space-y-5">
+                <input required className="w-full p-4 rounded-2xl bg-gray-50 outline-none font-medium" placeholder="Nombre" value={newProduct.name} onChange={(e) => setNewProduct({...newProduct, name: e.target.value})} />
+                <input required type="number" className="w-full p-4 rounded-2xl bg-gray-50 outline-none font-medium" placeholder="Precio ($)" value={newProduct.price} onChange={(e) => setNewProduct({...newProduct, price: e.target.value})} />
+                <select className="w-full p-4 rounded-2xl bg-gray-50 outline-none font-medium" value={newProduct.category} onChange={(e) => setNewProduct({...newProduct, category: e.target.value})}>
+                  <option>Lavadora</option><option>Refrigerador</option><option>Aire Acondicionado</option><option>Secadora</option>
+                </select>
+                <input required className="w-full p-4 rounded-2xl bg-gray-50 outline-none font-medium text-sm" placeholder="Link Directo .jpg" value={newProduct.imageUrl} onChange={(e) => setNewProduct({...newProduct, imageUrl: e.target.value})} />
+                
+                {newProduct.imageUrl && (
+                  <div className="mt-4 p-2 bg-blue-50 rounded-2xl border-2 border-dashed border-blue-200">
+                    <img src={newProduct.imageUrl} alt="Preview" className="w-full h-40 object-cover rounded-xl" onError={(e) => e.target.src = "https://placehold.co/600x400?text=Link+Invalido"} />
+                  </div>
+                )}
+
+                <textarea required className="w-full p-4 rounded-2xl bg-gray-50 outline-none font-medium h-32 resize-none" placeholder="Descripción" value={newProduct.description} onChange={(e) => setNewProduct({...newProduct, description: e.target.value})} />
+                <button type="submit" className="w-full bg-blue-600 text-white font-bold py-5 rounded-2xl shadow-lg hover:bg-blue-700 transition-all">
+                   {editingId ? "Guardar Cambios" : "Publicar Ahora"}
                 </button>
+                {editingId && (
+                  <button type="button" onClick={() => {setEditingId(null); setNewProduct({name:'', price:'', category:'Lavadora', description:'', imageUrl:''})}} className="w-full text-gray-400 font-bold text-sm mt-2">Cancelar Edición</button>
+                )}
               </form>
             </div>
           </div>
 
-          <div className="lg:col-span-2 space-y-6">
-            <h3 className="text-xl font-bold text-gray-800 ml-2">Inventario Activo</h3>
-            <div className="bg-white rounded-[32px] border border-gray-100 shadow-xl overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead className="bg-gray-50/50 border-b border-gray-50">
-                    <tr>
-                      <th className="p-6 text-xs font-black text-gray-400 uppercase">Equipo</th>
-                      <th className="p-6 text-xs font-black text-gray-400 uppercase">Precio</th>
-                      <th className="p-6 text-xs font-black text-gray-400 uppercase text-right">Acción</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-50">
-                    {products.map((p) => (
-                      <tr key={p.id} className="hover:bg-blue-50/30 transition-colors">
-                        <td className="p-6">
-                          <div className="flex items-center gap-4">
-                            <img src={p.imageUrl} className="w-14 h-14 rounded-2xl object-cover shadow-sm" />
-                            <div>
-                              <div className="font-bold text-gray-900">{p.name}</div>
-                              <div className="text-xs text-blue-600 font-bold uppercase">{p.category}</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="p-6 font-black text-gray-900 text-lg">${p.price}</td>
-                        <td className="p-6 text-right">
-                          <button onClick={() => deleteProduct(p.id)} className="bg-red-50 text-red-500 p-3 rounded-xl hover:bg-red-500 hover:text-white transition-all shadow-sm">
-                            <Trash2 className="w-5 h-5" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+          <div className="lg:col-span-2 space-y-4">
+            <h3 className="text-xl font-bold text-gray-800 ml-2">Inventario</h3>
+            {products.map((p) => (
+              <div key={p.id} className="bg-white p-5 rounded-[30px] flex items-center justify-between border border-gray-100 shadow-sm hover:shadow-md transition-all">
+                <div className="flex items-center gap-4">
+                  <img src={p.imageUrl} className="w-20 h-20 rounded-2xl object-cover" />
+                  <div>
+                    <div className="font-black text-gray-900 text-lg">{p.name}</div>
+                    <div className="text-blue-600 font-bold text-sm">${p.price.toLocaleString()}</div>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={() => startEdit(p)} className="p-4 bg-blue-50 text-blue-600 rounded-2xl hover:bg-blue-600 hover:text-white transition-all shadow-sm"><Wrench size={20}/></button>
+                  <button onClick={() => deleteProduct(p.id)} className="p-4 bg-red-50 text-red-500 rounded-2xl hover:bg-red-600 hover:text-white transition-all shadow-sm"><Trash2 size={20}/></button>
+                </div>
               </div>
-            </div>
+            ))}
           </div>
         </div>
       </div>
     );
   };
 
-  if (loading) return (
-    <div className="h-screen flex flex-col items-center justify-center bg-white">
-      <div className="relative w-24 h-24 mb-6 text-blue-600">
-        <div className="absolute inset-0 border-8 border-blue-50 rounded-full"></div>
-        <div className="absolute inset-0 border-8 border-current border-t-transparent rounded-full animate-spin"></div>
-      </div>
-      <p className="text-blue-900 font-black tracking-widest animate-pulse uppercase text-sm">Validando Acceso</p>
-    </div>
-  );
+  if (loading) return <div className="h-screen flex items-center justify-center text-blue-600 font-black animate-pulse">CARGANDO...</div>;
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] font-sans text-gray-900">
-      <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-xl border-b border-gray-100">
-        <div className="container mx-auto px-6 h-24 flex items-center justify-between">
-          <div className="flex items-center gap-3 cursor-pointer group" onClick={() => setView('home')}>
-            <div className="bg-blue-600 p-3 rounded-[18px] text-white transform group-hover:rotate-12 transition-transform shadow-lg shadow-blue-200">
-              <Refrigerator className="w-7 h-7" />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-2xl font-black tracking-tighter text-blue-900 leading-none">REFRI<span className="text-blue-600">MASTER</span></span>
-              <span className="text-[10px] font-bold text-blue-400 tracking-[0.2em] uppercase">Service & Sales</span>
-            </div>
-          </div>
-
-          <div className="hidden md:flex items-center gap-10 font-bold">
-            <button onClick={() => setView('home')} className={`text-sm uppercase tracking-widest transition-colors ${view === 'home' ? 'text-blue-600' : 'text-gray-400 hover:text-gray-900'}`}>Inicio</button>
-            <button onClick={() => setView('catalog')} className={`text-sm uppercase tracking-widest transition-colors ${view === 'catalog' ? 'text-blue-600' : 'text-gray-400 hover:text-gray-900'}`}>Tienda</button>
-            
-            <div className="h-8 w-px bg-gray-100"></div>
-
-            {isAdmin ? (
-              <button onClick={() => setView('admin')} className="flex items-center gap-2 text-sm text-blue-600 bg-blue-50 px-5 py-2.5 rounded-full transition-all">
-                Panel Admin
-              </button>
-            ) : (
-              <button onClick={() => setView('admin')} className="flex items-center gap-2 text-sm text-gray-500 hover:text-blue-600 transition-all">
-                <LogIn className="w-4 h-4" /> Acceso Dueño
-              </button>
-            )}
-            
-            <a 
-              href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent("Hola RefriMaster, necesito información sobre un servicio.")}`} 
-              target="_blank" 
-              rel="noreferrer" 
-              className="bg-blue-600 text-white px-8 py-3.5 rounded-2xl hover:bg-blue-700 transition-all shadow-xl shadow-blue-100"
-            >
-              WhatsApp
-            </a>
-          </div>
-
-          <button className="md:hidden text-blue-900" onClick={() => setIsMenuOpen(!isMenuOpen)}>
-            {isMenuOpen ? <X size={32} /> : <Menu size={32} />}
-          </button>
+    <div className="min-h-screen bg-[#F8FAFC]">
+      <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-xl border-b h-24 flex items-center justify-between px-6">
+        <div className="flex items-center gap-3 cursor-pointer" onClick={() => setView('home')}>
+          <div className="bg-blue-600 p-3 rounded-2xl text-white shadow-lg"><Refrigerator /></div>
+          <span className="text-2xl font-black text-blue-900">REFRI<span className="text-blue-600">MASTER</span></span>
         </div>
+        <div className="hidden md:flex gap-10 font-bold text-sm items-center">
+          <button onClick={() => setView('home')} className={view === 'home' ? 'text-blue-600' : 'text-gray-400'}>INICIO</button>
+          <button onClick={() => setView('catalog')} className={view === 'catalog' ? 'text-blue-600' : 'text-gray-400'}>TIENDA</button>
+          <button onClick={() => setView('admin')} className="text-gray-400 flex items-center gap-2 hover:text-blue-600"><Lock size={16}/> ADMIN</button>
+          <a href={`https://wa.me/${WHATSAPP_NUMBER}`} target="_blank" rel="noreferrer" className="bg-blue-600 text-white px-8 py-3 rounded-2xl shadow-xl">WhatsApp</a>
+        </div>
+        <button className="md:hidden text-blue-900" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+          {isMenuOpen ? <X size={32} /> : <Menu size={32} />}
+        </button>
       </nav>
-
       <main className="min-h-[70vh]">
         {view === 'home' && renderHome()}
         {view === 'catalog' && renderCatalog()}
         {view === 'admin' && renderAdmin()}
       </main>
-
-      <footer className="bg-blue-950 text-white pt-24 pb-12 px-6 mt-20 rounded-t-[60px]">
+       <footer className="bg-blue-950 text-white pt-24 pb-12 px-6 mt-20 rounded-t-[60px]">
         <div className="container mx-auto grid grid-cols-1 md:grid-cols-4 gap-16">
           <div className="col-span-1 md:col-span-2">
             <h3 className="text-3xl font-black mb-6 text-white">RefriMaster<span className="text-blue-500">.</span></h3>
